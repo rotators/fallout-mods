@@ -1,0 +1,163 @@
+/*
+
+   Adds a timer note to the PipBoy, similar to the water timer in Fo1.
+
+   Works for:
+      - The Modoc Slags quest,
+      - the Klamath moonshine still,
+      - and Mason's guard assignment in New Reno / Enclave encounter.
+
+*/
+
+/* Include Files */
+#include "sfall/sfall.h"
+#include "define.h"
+#include "command.h"
+
+/* Standard Script Procedures */
+procedure start;
+
+procedure GameModeChange_handler;
+procedure SetGlobalVar_handler;
+procedure pipboy_note_refresh;
+
+procedure KeyPressHandler;
+procedure show_note;
+procedure show_days;
+procedure delete_all;
+
+variable timer_active;
+variable lastDay;
+
+variable Scr_Width;
+variable Scr_Height;
+
+// Timer defines
+#define days_till_slag_attack                   (global_var(GVAR_SLAUGHTER_SLAG_TIME) - GAME_TIME_IN_DAYS)
+#define refill_still_hours                      (24 + (global_var(GVAR_STILL_START) - GAME_TIME_IN_HOURS))
+#define salvatore_guard_hours                   (get_sfall_global_int("masontmr") - GAME_TIME_IN_HOURS)
+
+#define TIMER_OFF          (0)
+#define TIMER_STILL        (1)
+#define TIMER_SLAGS        (2)
+#define TIMER_SALVATORE    (3)
+
+procedure start begin
+   if (game_loaded) then begin
+      set_global_script_type(0);
+
+      register_hook_proc(HOOK_GAMEMODECHANGE, GameModeChange_handler);
+      register_hook_proc(HOOK_RESTTIMER, pipboy_note_refresh);
+
+      if (get_sfall_global_int("masontmr") == 0) then
+         register_hook_proc(HOOK_SETGLOBALVAR, SetGlobalVar_handler);
+   end
+end
+
+procedure GameModeChange_handler begin
+   if (refill_still_hours > 0) then begin
+      timer_active := TIMER_STILL;
+   end
+   else if (salvatore_guard_hours > 0) then begin
+      timer_active := TIMER_SALVATORE;
+      //if ((game_time_hour%100 >= 0) and (game_time_hour%100 <= 10)) then timer_active := timer_active +1;
+   end
+   else if (days_till_slag_attack > 0) then begin
+      timer_active := TIMER_SLAGS;
+   end
+   else begin
+      timer_active := TIMER_OFF;
+   end
+
+   if ((get_game_mode bwand PIPBOY) and (timer_active > 0)) then begin
+      if (get_sfall_global_int("opennote") != 1) then begin
+         set_sfall_global("opennote", 1);
+         call show_note;
+      end
+   end
+   else if (get_sfall_global_int("opennote") != 0) then begin
+      set_sfall_global("opennote", 0);
+      call delete_all;
+   end
+end
+
+procedure SetGlobalVar_handler begin
+   variable
+      gvarIndx := get_sfall_arg,
+      gvarState := get_sfall_arg;
+
+   // Workaround, because the Mason timer is done via LVARs. Luckily they set a GVAR at the same time.
+   if (gvarIndx == GVAR_NEW_RENO_GUARD_ASSIGNMENT) then begin
+      if ((gvarState == 2) and (get_sfall_global_int("masontmr") == 0)) then begin
+         set_sfall_global("masontmr", GAME_TIME_IN_HOURS + 24);
+      end
+   end
+end
+
+procedure pipboy_note_refresh begin
+   if (get_game_mode bwand PIPBOY) then begin
+      if (timer_active > 0) and (get_sfall_global_int("opennote") > 0) then begin
+         call show_days;
+      end
+      else if (get_sfall_global_int("opennote") != 0) then begin
+         set_sfall_global("opennote", 0);
+         call delete_all;
+      end
+   end
+end
+
+procedure show_note begin
+   Scr_Width := (get_screen_width / 2);
+   Scr_Height := (get_screen_height / 2);
+
+   // If using original resolution for whatever weird reason
+   if ((get_ini_setting("f2_res.ini|IFACE|IFACE_BAR_MODE") == 1) or Scr_Height == 240) then begin
+      Scr_Height += 50;
+   end
+
+   create_win("win_note", (Scr_Width - 288), (Scr_Height - 207), 148, 227);
+   SelectWin("win_note");
+   if (timer_active == TIMER_STILL) then
+      sfall_func1("draw_image_scaled", "art\\intrface\\notestill.frm");
+   else if (timer_active == TIMER_SALVATORE) then
+      sfall_func1("draw_image_scaled", "art\\intrface\\notemasn.frm");
+   else
+      sfall_func1("draw_image_scaled", "art\\intrface\\notekarl.frm");
+   ShowWin;
+
+   call show_days;
+end
+
+// Initial "days left" when opening the PipBoy:
+procedure show_days begin
+variable timer;
+
+   if (timer_active == TIMER_STILL) then begin
+      timer := refill_still_hours;
+   end
+   else if (timer_active == TIMER_SALVATORE) then begin
+      timer := salvatore_guard_hours;
+   end
+   else if (timer_active == TIMER_SLAGS) then
+      timer := days_till_slag_attack;
+
+   //display_msg("timer: " + timer);
+
+   if (timer <= 0) then begin
+      timer_active := TIMER_OFF;
+      set_sfall_global("opennote", 0);
+      call delete_all;
+   end
+   else begin
+      SelectWin("win_note");
+      if (timer <= 250) then
+         draw_image("art\\INTRFACE\\days.frm", (timer - 1), 35, 97, 0);
+      else
+         draw_image("art\\INTRFACE\\days.frm", 250, 35, 97, 0);
+      ShowWin;
+   end
+end
+
+procedure delete_all begin
+   DeleteWin("win_note");
+end

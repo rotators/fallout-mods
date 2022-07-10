@@ -1,2 +1,2 @@
-# fallout-mods
-Generic (mini-)mods for Fallout 2
+# Various Fallout 2 Mods
+Various (mini-)mods for Fallout 2, made by the Rotators.

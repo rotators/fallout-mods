@@ -1,0 +1,555 @@
+/*
+
+   Recreates the "Tell Me About"-function from Fallout 1 (with improvements).
+
+   NOTE:
+
+      ----
+
+*/
+
+/* Include Files */
+#include "define.h"
+#include "command.h"
+#include "sfall/main.h"
+#include "sfall/sfall.rotators.h"
+#include "sfall/dik.h"
+
+/* Standard Script Procedures */
+procedure start;
+
+procedure create_button;
+procedure delete_button;
+procedure do_on;
+procedure do_off;
+procedure do_off_small;
+procedure do_down;
+procedure do_down_small;
+procedure do_up;
+procedure do_up_cancel;
+procedure do_up_ok;
+
+procedure GameModeChange_Handler;
+procedure KeyPress_Handler;
+procedure MouseClick_Handler;
+procedure StdProcedure_Handler;
+procedure StdProcedure_End_Handler;
+
+procedure OpenInput;
+procedure CloseInput;
+procedure GenerateReply;
+procedure PrintReply(variable text);
+procedure ClearInputBox;
+
+#define mstr_tma(x)        message_str_game(tma_source_generic, x)
+#define Draw_Image(img)    sfall_func("draw_image", img)
+
+// Russian language cannot into lower/uppercase
+#define convert_to_lower(val)    if (language != "russian") then \
+                                    val := string_tolower(val)
+
+// Button sfx
+#define SoundP             "butin4"
+#define SoundR             "butout4"
+#define SoundOff           "IB2LU1X1"
+#define SoundDown          "IB1P1XX1"
+#define SoundError         "IISXXXX1"
+
+// Default paths
+#define tma_settings_path  "mods\\fo2_tma\\tma.ini"
+#define key_map_path       "mods\\fo2_tma\\keymap.ini"
+#define lang_ini_str       "fallout2.cfg|system|language"
+
+//
+#define searchKeyword(source) \
+   for (i := 0; (i < 100 and found == 0); i++) begin                       \
+      if ((source == tma_source_generic) or (override_source)) then begin  \
+         input_check := message_str_game(source, (i + msg_offset));        \
+      end else begin                                                       \
+         input_check := message_str(source, (i + msg_offset));             \
+      end                                                                  \
+      if (input_check != "Error" and input_check != "") then begin         \
+         split := string_split(input_check, "|");                          \
+         foreach (word : keyword in split) begin                           \
+            keyword := " " + keyword + " ";                                \
+            convert_to_lower(keyword);                                     \
+            if (len_array(string_split(input, keyword)) > 1) then begin    \
+               if ((source == tma_source_generic) or (override_source)) then begin  \
+                  reply_final := message_str_game(source, (i + msg_offset) + 100);  \
+               end else begin                                                       \
+                  reply_final := message_str(source, (i + msg_offset) + 100);       \
+               end                                                         \
+               found := 1;                                                 \
+               break;                                                      \
+            end                                                            \
+         end                                                               \
+      end                                                                  \
+      else                                                                 \
+         break;                                                            \
+   end                                                                     \
+   noop
+
+variable tellme_button;
+variable fetch_input;
+variable input;
+
+variable Scr_Width;
+variable Scr_Height;
+variable MousonBut;
+variable ButPres;
+variable charactersMap := 0;
+variable charactersMapUpper := 0;
+variable shiftPressed := 0;
+variable game_mode;
+variable language := "english";
+
+variable gen_tma_msg, custom_tma_msg;
+variable rnd_reply, override_source;
+
+// msg string source
+#define tma_source_critter      (get_script(critter) + 1)
+#define tma_source_generic      (gen_tma_msg)
+#define tma_source_custom       (custom_tma_msg)
+
+// generic defines
+#define TMA_MSG_NAME_START      (970)
+#define TMA_MSG_NAME_END        (972)
+
+#define TMA_MSG_DONTKNOW_START  (980)
+#define TMA_MSG_DONTKNOW_END    (982)
+
+// (location) types from GEN_TMA.msg
+#define TMA_MSG_NEWR1            (2800)
+
+#define set_tma_data_generic(x)     set_tma_data(tma_source_generic, x, TMA_MSG_NAME_START, TMA_MSG_NAME_END, TMA_MSG_DONTKNOW_START, TMA_MSG_DONTKNOW_END)
+#define set_tma_data_default        set_tma_data(get_script(critter), 1000, TMA_MSG_NAME_START, TMA_MSG_NAME_END, TMA_MSG_DONTKNOW_START, TMA_MSG_DONTKNOW_END)
+
+procedure start begin
+   if (game_loaded) then begin
+      variable iniVal := get_ini_string(key_map_path + "|main|language"); // get lang from keymap.ini
+      if(iniVal == "" or iniVal == -1) then begin
+         iniVal := get_ini_string(lang_ini_str);
+         if(iniVal != "" and iniVal != -1) then language := iniVal;
+         debug_msg(lang_ini_str + "=" + language);
+      end else
+         language := iniVal;
+
+      register_hook_proc(HOOK_GAMEMODECHANGE, GameModeChange_Handler);
+      register_hook_proc(HOOK_KEYPRESS, KeyPress_Handler);
+      register_hook_proc(HOOK_STDPROCEDURE, StdProcedure_Handler);
+      register_hook_proc(HOOK_STDPROCEDURE_END, StdProcedure_End_Handler);
+
+      // Create an array and write the array of the ID number in the global variable
+      // access to an array of other scripts
+      tma_data_array := create_array(6, 0);
+      set_sfall_global("TMA_DATA", tma_data_array);
+
+      tma_gvar_array := create_array(3, 0);
+      set_sfall_global("TMA_GVAR", tma_gvar_array);
+
+      // Load all generic text from a new .msg file
+      gen_tma_msg := add_extra_msg_file("gen_tma.msg");
+      custom_tma_msg := add_extra_msg_file("custom_tma.msg");
+   end
+end
+
+procedure GameModeChange_Handler begin
+   variable key, iniVals, iniVal;
+   variable prev_mode := game_mode;
+   game_mode := get_game_mode;
+
+   if ((tellme_button == false) and (game_mode == DIALOG)) then begin
+      // TMA doesn't work with party members (different interface), but might allow dude_obj for debug stuff
+      if ((obj_in_party(dialog_obj) == false) /*or (dialog_obj == dude_obj)*/) then begin
+         if (charactersMap == 0) then begin
+            // English is default language
+            charactersMap := {
+                2:"1",  3:"2",  4:"3",  5:"4",  6:"5",  7:"6",  8:"7",  9:"8", 10:"9", 11:"0",
+               12:"-", 13:"=", 16:"q", 17:"w", 18:"e", 19:"r", 20:"t", 21:"y", 22:"u", 23:"i",
+               24:"o", 25:"p", 30:"a", 31:"s", 32:"d", 33:"f", 34:"g", 35:"h", 36:"j", 37:"k",
+               38:"l", 39:";", 44:"z", 45:"x", 46:"c", 47:"v", 48:"b", 49:"n", 50:"m", 51:",",
+               52:".", 57: " "
+            };
+            charactersMapUpper := {
+                2:"!",  3:"@",  4:"#",  5:"$",  6:"%",  7:"^",  8:"&",  9:"*", 10:"(", 11:")",
+               12:"_", 13:"+", 16:"Q", 17:"W", 18:"E", 19:"R", 20:"T", 21:"Y", 22:"U", 23:"I",
+               24:"O", 25:"P", 30:"A", 31:"S", 32:"D", 33:"F", 34:"G", 35:"H", 36:"J", 37:"K",
+               38:"L", 39:":", 44:"Z", 45:"X", 46:"C", 47:"V", 48:"B", 49:"N", 50:"M", 51:"<",
+               52:">", 57: " "
+            };
+            // Read chars from keymap.ini
+            iniVals := get_ini_section(key_map_path, language);
+            foreach (key: iniVal in iniVals) begin
+               if (strlen(iniVal) > 1) then begin
+                  key := atoi(key);
+                  charactersMap[key] := iniVal[0];
+                  charactersMapUpper[key] := iniVal[1];
+               end
+            end
+            fix_array(charactersMap);
+            fix_array(charactersMapUpper);
+         end
+
+         if (prev_mode bwand BARTER) then
+            call create_button in 1; // delay call
+         else
+            call create_button;
+      end
+   end
+   else if (tellme_button and (game_mode bwand DIALOG) == false) then begin
+      call delete_button;
+
+      // Unset TMA data when exiting dialog mode
+      reset_tma_data;
+   end
+   else if (tellme_button and (game_mode bwand (DIALOG + SPECIAL) or game_mode bwand BARTER)) then begin
+      call delete_button;
+      if (fetch_input) then call CloseInput;
+   end
+end
+
+procedure KeyPress_Handler begin
+   variable
+      key_state := get_sfall_arg,
+      key_dik := get_sfall_arg,
+      char;
+
+   if (key_state) then begin
+      if (fetch_input) then begin
+         if (key_dik == DIK_ESCAPE) then begin
+            call CloseInput;
+            return;
+         end
+         else if (key_dik == DIK_LSHIFT or key_dik == DIK_RSHIFT) then begin
+            shiftPressed := true;
+            return;
+         end
+
+         call ClearInputBox;
+
+         if (key_dik == DIK_RETURN or key_dik == DIK_NUMPADENTER and input != "") then begin
+            call GenerateReply;
+         end
+         else if (key_dik == DIK_BACK and input != "") then begin
+            input := substr(input, 0, -1);
+         end
+         else begin
+            if (shiftPressed > 0) then
+               char := charactersMapUpper[key_dik];
+            else
+               char := charactersMap[key_dik];
+            if (char) then begin
+               char := input + char;
+               if (get_text_width(char) < 234) then
+                  input := char;
+               else
+                  play_sfx(SoundError);
+            end
+            //debug("width: " + get_text_width(input) + " " + input);
+         end
+
+         SelectWin("tellme_interface");
+         Format(input + "_", 200, 102, 240, 14, justifyleft);
+         ShowWin;
+
+         // Override key with something else, because 1, 2, 3, 4, etc. can still advance through dialog
+         // Allow screenshots, though
+         if (key_dik != DIK_F12) then set_sfall_return(255);
+      end
+   end
+   else if (fetch_input) then begin
+      if (key_dik == DIK_LSHIFT or key_dik == DIK_RSHIFT) then shiftPressed := false;
+   end
+end
+
+procedure StdProcedure_Handler begin
+   variable
+      proc := get_sfall_arg,
+      critter := get_sfall_arg;
+   variable critterList, scriptID, customData, disableTMA;
+
+   if (proc != talk_proc) then return;
+   if (obj_type(critter) != OBJ_TYPE_CRITTER) then return;
+
+   override_source := 0;
+
+   //display_msg("script " + get_script(critter));
+
+   // Check if critter has custom strings
+   critterList := get_ini_section(tma_settings_path, "custom_string");
+   foreach (scriptID: customData in critterList) begin
+      if (get_script(critter) == scriptID) then begin
+         customData := string_split(customData, ",");
+
+         // Critter uses custom strings that aren't in his critter script?
+         if (atoi(customData[5]) == 1) then
+            override_source := 1;
+
+         if (atoi(customData[0]) > 0) then begin
+            set_tma_data(get_script(critter), atoi(customData[0]), atoi(customData[1]), atoi(customData[2]), atoi(customData[3]), atoi(customData[4]));
+         end
+         else
+            disableTMA := 1;
+
+         break;
+      end
+   end
+
+   // Add default TMA if it's not disabled and not overwritten by custom setting
+   if ((disableTMA == false) and (override_source != 1)) then begin
+      set_tma_data_default;
+   end
+end
+
+procedure StdProcedure_End_Handler begin
+   variable
+      proc := get_sfall_arg,
+      critter := get_sfall_arg;
+
+   if (proc != talk_proc) then return;
+   reset_tma_data;
+end
+
+procedure create_button begin
+   tellme_button := true;
+
+   Scr_Width := get_interface_x(WINTYPE_DIALOG);
+   Scr_Height := get_interface_y(WINTYPE_DIALOG);
+
+   create_win("win_input", (Scr_Width + 592), (Scr_Height + 406), 15, 15);
+   SelectWin("win_input");
+   AddButton("button_input", 0, 0, 15, 15);
+   AddButtonGFX("button_input", "PCX\\DI_RDBT1.pcx", "PCX\\DI_RDBT2.pcx", "PCX\\DI_RDBT2.pcx");
+   AddButtonProc("button_input", do_on, do_off, do_down, do_up);
+   ShowWin;
+end
+
+procedure delete_button begin
+   if (tellme_button) then begin
+      tellme_button := false;
+      DeleteWin("win_input");
+   end
+end
+
+procedure do_on begin
+   MousonBut := true;
+end
+
+procedure do_off begin
+   if (ButPres) then play_sfx(SoundOff);
+   MousonBut := false;
+   ButPres := false;
+end
+
+procedure do_off_small begin
+   if (ButPres) then play_sfx(SoundR);
+   MousonBut := false;
+   ButPres := false;
+end
+
+procedure do_down begin
+   if (ButPres == false) then begin
+      ButPres := true;
+      play_sfx(SoundP);
+   end
+end
+
+procedure do_down_small begin
+   if (ButPres == false) then begin
+      ButPres := true;
+      play_sfx(SoundDown);
+   end
+end
+
+procedure do_up begin
+   ButPres := false;
+   play_sfx(SoundOff);
+   if (fetch_input == false) then call OpenInput;
+end
+
+procedure do_up_cancel begin
+   ButPres := false;
+   play_sfx(SoundR);
+   call CloseInput;
+end
+
+procedure do_up_ok begin
+   ButPres := false;
+   play_sfx(SoundR);
+
+   if (input != "") then begin
+      call ClearInputBox;
+      Format("_", 200, 102, 240, 14, justifyleft);
+      ShowWin; // redraw tellme interface
+      call GenerateReply;
+   end
+end
+
+// Create input interface
+procedure OpenInput begin
+   variable caps, w;
+
+   // Only open interface if valid TMA data has been saved
+   // (computer terminals and some other critters don't have TMAs)
+   if (tma_data_array[0] > 0) then begin
+      shiftPressed := false;
+      fetch_input := true;
+      input := "";
+
+      // Reply window (clear the Reply window)
+      create_win("tellme_reply", (Scr_Width + 132), (Scr_Height + 226), 390, 64);
+      SelectWin("tellme_reply");
+      Display("PCX\\tellmeabout_reply.pcx");
+      ShowWin;
+
+      // Fake input / dialog option overlay
+      create_win_flag("tellme_interface", (Scr_Width), (Scr_Height + 290), 640, 190, WIN_FLAG_HIDDEN + WIN_FLAG_MOVEONTOP);
+      SelectWin("tellme_interface");
+
+      Draw_Image("art\\intrface\\di_talk.frm");
+      draw_image("art\\intrface\\lsgbox.frm", 0, 320, 24, false);
+
+      // CANCEL button
+      AddButton("button_cancel", 335, 124, 15, 16);
+      AddButtonGFX("button_cancel", "PCX\\lilreddn.pcx", "PCX\\lilredup.pcx", "PCX\\lilredup.pcx");
+      AddButtonProc("button_cancel", do_on, do_off_small, do_down_small, do_up_cancel);
+      // OK button
+      AddButton("button_ok", 209, 124, 15, 16);
+      AddButtonGFX("button_ok", "PCX\\lilreddn.pcx", "PCX\\lilredup.pcx", "PCX\\lilredup.pcx");
+      AddButtonProc("button_ok", do_on, do_off_small, do_down_small, do_up_ok);
+
+      SetFont(103);
+      SetTextColor(0.52, 0.75, 0.15);
+
+      Format(mstr_tma(1), 240, 74, 200, 30, 0);
+      Format(mstr_tma(2), 230, 123, 100, 30, 0);
+      Format(mstr_tma(3), 355, 123, 100, 30, 0);
+
+      SetFont(101);
+      SetTextColor(0.0, 1.0, 0.0);
+      Format("_", 200, 102, 240, 14, justifyleft);
+
+      caps := "$" + dude_caps;
+      w := get_text_width(caps);
+      if w > 60 then w := 60;
+      Format(caps, 38 - (w / 2), 36, w, 15, justifyleft);
+
+      show_window("tellme_interface");
+   end
+end
+
+procedure CloseInput begin
+   fetch_input := false;
+   DeleteWin("tellme_interface");
+   DeleteWin("tellme_reply");
+end
+
+// "critical" keyword
+// "ensure [procedure] works reliably. AFAIK it basically tells the engine "just stop what you're doing and focus on running this procedure first" -NovaRain
+critical procedure GenerateReply begin
+   variable
+      critter := dialog_obj,
+      reply_source := tma_data_array[0],
+      msg_offset := tma_data_array[1],
+      reply_name_start := tma_data_array[2],
+      reply_name_end := tma_data_array[3],
+      reply_unknown_start := tma_data_array[4],
+      reply_unknown_end := tma_data_array[5],
+
+      i, input_check, reply_final, split, word, keyword, split_sentence, found := 0,
+
+      // Testcode for the future: Set variable if player hits a specific reply
+      tma_var_line := tma_gvar_array[0],
+      tma_var_gvar := tma_gvar_array[1],
+      tma_var_state := tma_gvar_array[2];
+
+   // Remove potential excess signs and spaces at the end of input
+   for (i := strlen(input) - 1; (i > 0); i--) begin
+      If input[i] == "?" then i--;
+      If input[i] == "!" then i--;
+      If input[i] != " " then begin
+         input := substr(input, 0, i + 1);
+         break;
+      end
+   end
+
+   /*******************************************************
+      Find reply - Check the whole sentence
+   *******************************************************/
+   input := " " + input + " "; // We do this to check for words like "Shady" and not "xShadyx"
+   convert_to_lower(input);
+   if (reply_name_start > 0) then begin
+      variable crit_name := obj_name(critter);
+      crit_name = " " + crit_name + " "; // Same as above. Ex.: to prevent "Ian" to be found in "Killian"
+
+      convert_to_lower(crit_name);
+      if (len_array(string_split(input, crit_name)) > 1) then begin
+         rnd_reply := random(reply_name_start, reply_name_end);
+         if override_source then begin
+            reply_final := message_str_game(tma_source_custom, rnd_reply);
+         end
+         else if (message_str(reply_source, rnd_reply) == "Error") then begin
+            reply_final := message_str_game(tma_source_generic, rnd_reply);
+         end
+         else
+            reply_final := message_str(reply_source, rnd_reply);
+         found := 1;
+      end
+   end
+
+   if override_source then begin
+      searchKeyword(tma_source_custom);
+   end
+   else begin
+      searchKeyword(reply_source);
+   end
+
+   debug_msg("input: <" + input + ">");
+
+   // No valid unique reply found, try generic keywords
+   if (reply_final == 0) then begin
+      variable curMapList, map, msg;
+
+      // Check current map and set generic response
+      curMapList := get_ini_section(tma_settings_path, "map_string");
+      foreach (map: msg in curMapList) begin
+         if (cur_map_index == map) then begin
+            msg_offset := atoi(msg);
+            searchKeyword(tma_source_generic);
+            break;
+         end
+      end
+   end
+
+   // Still no reply found
+   if (reply_final <= 0) then begin
+      rnd_reply := random(reply_unknown_start, reply_unknown_end);
+      if override_source then begin
+         reply_final := message_str_game(tma_source_custom, rnd_reply);
+      end
+      else if (message_str(reply_source, rnd_reply) == "Error") then begin
+         reply_final := message_str_game(tma_source_generic, rnd_reply);
+      end
+      else
+         reply_final := message_str(reply_source, rnd_reply);
+   end
+
+   // Print reply
+   call PrintReply(reply_final);
+
+   // Reset input
+   input := "";
+end
+
+procedure PrintReply(variable reply_final) begin
+   SelectWin("tellme_reply");
+   Display("PCX\\tellmeabout_reply.pcx");
+   GotoXY(3, 9);
+   PrintRect("  " + reply_final, 380, justifyleft);
+   ShowWin;
+end
+
+procedure ClearInputBox begin
+   SelectWin("tellme_interface");
+   FillRect(198, 98, 242, 14, 0.02, 0.05, 0);
+end
