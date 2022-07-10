@@ -8,4 +8,7 @@ With this mod, the FALLOUT 1 Tell-Me-About feature gets introduced into FALLOUT 
 **Note:** Currently this is more or less a modders resource. Most NPCs in the vanilla game don't have TMA lines written for them, and the configuration (and written text) in this mod is unfinished. If someone wants to help with filling it out, be my guest.
 
 ### Installation
-To use this mod, copy the "fo2_tma.dat" folder into the "/fallout2/mods/" folder and the game will automatically load it.
+To use this mod, open the ddraw.ini, go to [ExtraPatches] and add "PatchFile[number]=mods\fo2_tma" at the end of the "PatchFile"-list!
+The game will now load the additional mod folder.
+
+If there is more than one additional mod, make sure to correctly number the "PatchFileX" entry (1, 2, 3, ...). 
