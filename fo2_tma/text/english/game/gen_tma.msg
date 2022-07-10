@@ -28,7 +28,7 @@
 # MAP_ARROYO_
 # The Arroyo Tell-Me-Abouts
 #
-{1000}{}{Elder}
+{1000}{}{Elder|Mother}
 {1001}{}{Founder}
 {1002}{}{Vault Dweller|Dweller|Vince}
 {1003}{}{Arroyo}

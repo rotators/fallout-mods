@@ -37,6 +37,7 @@ procedure StdProcedure_End_Handler;
 
 procedure OpenInput;
 procedure CloseInput;
+procedure findReply(variable source, variable msg_offset);
 procedure GenerateReply;
 procedure PrintReply(variable text);
 procedure ClearInputBox;
@@ -59,35 +60,6 @@ procedure ClearInputBox;
 #define tma_settings_path  "mods\\fo2_tma\\tma.ini"
 #define key_map_path       "mods\\fo2_tma\\keymap.ini"
 #define lang_ini_str       "fallout2.cfg|system|language"
-
-//
-#define searchKeyword(source) \
-   for (i := 0; (i < 100 and found == 0); i++) begin                       \
-      if ((source == tma_source_generic) or (override_source)) then begin  \
-         input_check := message_str_game(source, (i + msg_offset));        \
-      end else begin                                                       \
-         input_check := message_str(source, (i + msg_offset));             \
-      end                                                                  \
-      if (input_check != "Error" and input_check != "") then begin         \
-         split := string_split(input_check, "|");                          \
-         foreach (word : keyword in split) begin                           \
-            keyword := " " + keyword + " ";                                \
-            convert_to_lower(keyword);                                     \
-            if (len_array(string_split(input, keyword)) > 1) then begin    \
-               if ((source == tma_source_generic) or (override_source)) then begin  \
-                  reply_final := message_str_game(source, (i + msg_offset) + 100);  \
-               end else begin                                                       \
-                  reply_final := message_str(source, (i + msg_offset) + 100);       \
-               end                                                         \
-               found := 1;                                                 \
-               break;                                                      \
-            end                                                            \
-         end                                                               \
-      end                                                                  \
-      else                                                                 \
-         break;                                                            \
-   end                                                                     \
-   noop
 
 variable tellme_button;
 variable fetch_input;
@@ -121,7 +93,6 @@ variable rnd_reply, override_source;
 // (location) types from GEN_TMA.msg
 #define TMA_MSG_NEWR1            (2800)
 
-#define set_tma_data_generic(x)     set_tma_data(tma_source_generic, x, TMA_MSG_NAME_START, TMA_MSG_NAME_END, TMA_MSG_DONTKNOW_START, TMA_MSG_DONTKNOW_END)
 #define set_tma_data_default        set_tma_data(get_script(critter), 1000, TMA_MSG_NAME_START, TMA_MSG_NAME_END, TMA_MSG_DONTKNOW_START, TMA_MSG_DONTKNOW_END)
 
 procedure start begin
@@ -444,6 +415,37 @@ procedure CloseInput begin
    DeleteWin("tellme_reply");
 end
 
+procedure findReply(variable source, variable msg_offset) begin
+   variable i, input_check, reply_final, split, word, keyword, found := 0;
+
+   for (i := 0; (i < 100 and found == 0); i++) begin
+      if ((source == tma_source_generic) or (override_source)) then begin
+         input_check := message_str_game(source, (i + msg_offset));
+      end else begin
+         input_check := message_str(source, (i + msg_offset));
+      end
+      if (input_check != "Error" and input_check != "") then begin
+         split := string_split(input_check, "|");
+         foreach (word : keyword in split) begin
+            keyword := " " + keyword + " ";
+            convert_to_lower(keyword);
+            if (len_array(string_split(input, keyword)) > 1) then begin
+               if ((source == tma_source_generic) or (override_source)) then begin
+                  reply_final := message_str_game(source, (i + msg_offset) + 100);
+               end else begin
+                  reply_final := message_str(source, (i + msg_offset) + 100);
+               end
+               found := 1;
+               break;
+            end
+         end
+      end
+      else
+         break;
+   end
+   return reply_final;
+end
+
 // "critical" keyword
 // "ensure [procedure] works reliably. AFAIK it basically tells the engine "just stop what you're doing and focus on running this procedure first" -NovaRain
 critical procedure GenerateReply begin
@@ -456,7 +458,7 @@ critical procedure GenerateReply begin
       reply_unknown_start := tma_data_array[4],
       reply_unknown_end := tma_data_array[5],
 
-      i, input_check, reply_final, split, word, keyword, split_sentence, found := 0,
+      i, reply_final, found := 0,
 
       // Testcode for the future: Set variable if player hits a specific reply
       tma_var_line := tma_gvar_array[0],
@@ -493,18 +495,17 @@ critical procedure GenerateReply begin
          end
          else
             reply_final := message_str(reply_source, rnd_reply);
-         found := 1;
       end
    end
 
-   if override_source then begin
-      searchKeyword(tma_source_custom);
+   if (reply_final == 0) then begin
+      if override_source then begin
+         reply_final := findReply(tma_source_custom, msg_offset);
+      end
+      else begin
+         reply_final := findReply(reply_source, msg_offset);
+      end
    end
-   else begin
-      searchKeyword(reply_source);
-   end
-
-   debug_msg("input: <" + input + ">");
 
    // No valid unique reply found, try generic keywords
    if (reply_final == 0) then begin
@@ -515,7 +516,7 @@ critical procedure GenerateReply begin
       foreach (map: msg in curMapList) begin
          if (cur_map_index == map) then begin
             msg_offset := atoi(msg);
-            searchKeyword(tma_source_generic);
+            reply_final := findReply(tma_source_generic, msg_offset);
             break;
          end
       end

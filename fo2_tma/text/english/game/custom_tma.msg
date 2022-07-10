@@ -44,5 +44,10 @@
 # Arroyo Nagor
 #
 {600}{}{Smoke}
-
 {700}{}{Smoke is my dog! Have you seen him somewhere?}
+
+#
+# Arroyo Lucas/Fist
+#
+{800}{}{Fist}
+{900}{}{You are talking to me.}
