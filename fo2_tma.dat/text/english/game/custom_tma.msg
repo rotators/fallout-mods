@@ -34,19 +34,15 @@
 #
 # Arroyo Mynoc
 #
-{403}{}{I don't know anything about that.}
-{404}{}{Sorry. No clue.}
-{405}{}{Never heard of it.}
+{400}{}{Trader|Traders|Merchant|Merchants}
+{401}{}{Vic}
 
-{500}{}{Trader|Traders|Merchant|Merchants}
-{501}{}{Vic}
-
-{600}{}{Ah yes, the people from Klamath. They trade with us occasionally. Not so much anymore lately, though.}
-{601}{}{I don't remember his name, but there was this one merchant who was old and very loud. Haven't seen him in a while now. I wonder if anything happened?}
+{500}{}{Ah yes, the people from Klamath. They trade with us occasionally. Not so much anymore lately, though.}
+{501}{}{I don't remember his name, but there was this one merchant who was old and very loud. Haven't seen him in a while now. I wonder if anything happened?}
 
 #
 # Arroyo Nagor
 #
-{700}{}{Smoke}
+{600}{}{Smoke}
 
-{800}{}{Smoke is my dog! Have you seen him somewhere?}
+{700}{}{Smoke is my dog! Have you seen him somewhere?}
