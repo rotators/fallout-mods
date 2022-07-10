@@ -10,11 +10,12 @@ This mod is compatible with Fo2 vanilla, the unofficial patch, and the restorati
 
 I suggest to set the following settings in the ddraw.ini file for a better travel experience when using this mod:
 
-* ExpandWorldMap=1
-* WorldMapTravelMarkers=1
-* TravelMarkerColor=134
-* TravelMarkerStyles=1:2,2:1,1:2,1:2
-* WorldMapTerrainInfo=1
-
+```
+ExpandWorldMap=1
+WorldMapTravelMarkers=1
+TravelMarkerColor=134
+TravelMarkerStyles=1:2,2:1,1:2,1:2
+WorldMapTerrainInfo=1
+```
 ### Installation
 To use this mod, copy the "fo2_alternative_wm.dat" folder into the "/fallout2/mods/" folder and the game will automatically load it.
