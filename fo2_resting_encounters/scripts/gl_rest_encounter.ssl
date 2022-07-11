@@ -10,10 +10,27 @@
 #include "define.h"
 #include "sfall/sfall.h"
 #include "sfall/lib.arrays.h"
+#include "voodoo_lib.h"
 
 procedure start;
 procedure Encounter_handler;
 procedure override_terrain_type;
+procedure mark_locations;
+
+#define settings_path  "mods\\fo2_resting_encounters\\fo2_resting_encounters.ini"
+
+// Removes the text under green circles on the worldmap
+// Used by Classic Worldmap mod
+#define VOODOO_remove_circle_name \
+              begin                                             \
+               /* fallout2.wmInterfaceDrawCircleOverlay+0xD2 */ \
+               call VOODOO_WriteNop(0x4c407a);                  \
+               /* fallout2.wmInterfaceDrawCircleOverlay+0xEC */ \
+               call VOODOO_BlockCall(0x4c4094,6);               \
+              end                                               \
+              noop
+
+#define mstr_unknown       mstr_worldmap(1004)
 
 #define is_terrain_desert           (get_current_terrain_name == mstr_worldmap(1000))
 #define is_terrain_mountains        (get_current_terrain_name == mstr_worldmap(1001))
@@ -40,12 +57,34 @@ procedure override_terrain_type;
 #define AREA_RND_CITY               (28)
 #define AREA_RND_COAST              (29)
 
+#define AREA_CAR_OUTTA_GAS        (21)
+
+variable i, msg, town_list;
+variable iniVal;
+
 procedure start begin
    if (game_loaded) then begin
       set_global_script_type(0);
       register_hook_proc(HOOK_ENCOUNTER, Encounter_handler);
 
       call override_terrain_type;
+
+      iniVal := get_ini_setting(settings_path + "|" + "main" + "|" + "enable_classic_mode");
+      if (iniVal > 0) then begin
+         display_msg("works");
+
+         register_hook_proc(HOOK_GAMEMODECHANGE, mark_locations);
+
+         // Removes the location names under green circles
+         VOODOO_remove_circle_name;
+
+         // Count the amount of city locations based on MAPS.MSG file, starting at string line 1500
+         msg := 1500;
+         while (mstr_map(msg) != "Error") do begin
+            msg++;
+         end
+         town_list := (msg-1);
+      end
    end
 end
 
@@ -96,4 +135,18 @@ end
 procedure override_terrain_type begin
    // Override tile text to city
    set_terrain_name(19, 20, mstr_worldmap(1002));
+end
+
+procedure mark_locations begin
+   if (get_game_mode bwand WORLDMAP) then begin
+      i := 0;
+      while (i < town_list) do begin
+         if (town_known(i) >= MARK_STATE_KNOWN) then
+            set_town_title(i, mstr_map(1500 + i));
+         else
+            set_town_title(i, mstr_unknown);
+         i++;
+      end
+      set_town_title(AREA_CAR_OUTTA_GAS, mstr_map(1521)); // Car location needs to be named at all times
+   end
 end
