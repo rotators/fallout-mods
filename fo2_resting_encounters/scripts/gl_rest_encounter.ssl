@@ -71,8 +71,6 @@ procedure start begin
 
       iniVal := get_ini_setting(settings_path + "|" + "main" + "|" + "enable_classic_mode");
       if (iniVal > 0) then begin
-         display_msg("works");
-
          register_hook_proc(HOOK_GAMEMODECHANGE, mark_locations);
 
          // Removes the location names under green circles
