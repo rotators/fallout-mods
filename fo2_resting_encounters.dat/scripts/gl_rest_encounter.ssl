@@ -13,6 +13,7 @@
 
 procedure start;
 procedure Encounter_handler;
+procedure override_terrain_type;
 
 #define is_terrain_desert           (get_current_terrain_name == mstr_worldmap(1000))
 #define is_terrain_mountains        (get_current_terrain_name == mstr_worldmap(1001))
@@ -43,6 +44,8 @@ procedure start begin
    if (game_loaded) then begin
       set_global_script_type(0);
       register_hook_proc(HOOK_ENCOUNTER, Encounter_handler);
+
+      call override_terrain_type;
    end
 end
 
@@ -80,4 +83,17 @@ procedure Encounter_handler begin
       mapID := array_random_value(Maps_List);
       set_sfall_return(mapID);
    end
+   else if (event == 0 and is_terrain_city) then begin
+      // Need to fix that one New Reno tile
+      if (worldmap_xpos >= 950 and worldmap_xpos <=1000) and (worldmap_ypos >= 1000 and worldmap_ypos <= 1050) then begin
+         Maps_List := [MAP_RND_CITY1, MAP_RND_CITY_2, MAP_RND_CITY_3, MAP_RND_CITY_4, MAP_RND_CITY_5, MAP_RND_CITY_6, MAP_RND_CITY_7, MAP_RND_CITY_8];
+         mapID := array_random_value(Maps_List);
+         set_sfall_return(mapID);
+      end
+   end
+end
+
+procedure override_terrain_type begin
+   // Override tile text to city
+   set_terrain_name(19, 20, mstr_worldmap(1002));
 end
