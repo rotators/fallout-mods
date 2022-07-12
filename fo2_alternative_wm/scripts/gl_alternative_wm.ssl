@@ -1,0 +1,209 @@
+/*
+
+   Check where we are on the worldmap and overwrite the default desert "resting" map.
+
+   Compatible with vanilla Fo2 and UPU/RPU.
+
+*/
+
+/* Include Files */
+#include "define.h"
+#include "sfall/sfall.h"
+#include "sfall/lib.arrays.h"
+#include "voodoo_lib.h"
+
+procedure start;
+procedure Encounter_handler;
+procedure override_terrain_type;
+procedure mark_locations;
+procedure swap_interface;
+procedure swap_circle;
+
+#define settings_path  "mods\\fo2_alternative_wm\\fo2_alternative_wm.ini"
+
+// Removes the text under green circles on the worldmap
+// Used by Classic Worldmap mod
+#define VOODOO_remove_circle_name \
+              begin                                             \
+               /* fallout2.wmInterfaceDrawCircleOverlay+0xD2 */ \
+               call VOODOO_WriteNop(0x4c407a);                  \
+               /* fallout2.wmInterfaceDrawCircleOverlay+0xEC */ \
+               call VOODOO_BlockCall(0x4c4094,6);               \
+              end                                               \
+              noop
+
+#define mstr_unknown       mstr_worldmap(1004)
+
+#define is_terrain_desert           (get_current_terrain_name == mstr_worldmap(1000))
+#define is_terrain_mountains        (get_current_terrain_name == mstr_worldmap(1001))
+#define is_terrain_city             (get_current_terrain_name == mstr_worldmap(1002))
+#define is_terrain_coast            (get_current_terrain_name == mstr_worldmap(1003))
+
+#define MAP_RND_DESERT_1            (0)
+#define MAP_RND_CITY1               (68)
+#define MAP_RND_CITY_2              (125)
+#define MAP_RND_CITY_3              (141)
+#define MAP_RND_CITY_4              (142)
+#define MAP_RND_CITY_5              (143)
+#define MAP_RND_CITY_6              (144)
+#define MAP_RND_CITY_7              (145)
+#define MAP_RND_CITY_8              (146)
+#define MAP_RND_MOUNTAIN1           (74)
+#define MAP_RND_MOUNTAIN2           (75)
+#define MAP_RND_MOUNTAIN_3          (121)
+#define MAP_RND_COAST1              (76)
+#define MAP_RND_COAST2              (77)
+
+#define AREA_RND_DESERT             (26)
+#define AREA_RND_MOUNTAIN           (27)
+#define AREA_RND_CITY               (28)
+#define AREA_RND_COAST              (29)
+
+#define AREA_CAR_OUTTA_GAS        (21)
+
+variable i, msg, town_list;
+variable iniVal;
+variable warning := 0;
+
+procedure start begin
+   if (game_loaded) then begin
+      set_global_script_type(0);
+      register_hook_proc(HOOK_ENCOUNTER, Encounter_handler);
+
+      call override_terrain_type;
+
+      // Overwrite Fo2 interface graphics with files from Fo1.
+      iniVal := get_ini_setting(settings_path + "|" + "main" + "|" + "enable_alternative_wm");
+      if (iniVal > 0) then begin
+         warning := 1;
+         call swap_interface;
+      end
+
+      // Overwrite Fo2 city circle
+      iniVal := get_ini_setting(settings_path + "|" + "main" + "|" + "enable_alternative_circle");
+      if (iniVal > 0) then begin
+         warning := 1;
+         call swap_circle;
+      end
+
+      // Enable classic wm mode
+      iniVal := get_ini_setting(settings_path + "|" + "main" + "|" + "enable_classic_mode");
+      if (iniVal > 0) then begin
+         register_hook_proc(HOOK_GAMEMODECHANGE, mark_locations);
+
+         // Removes the location names under green circles
+         VOODOO_remove_circle_name;
+
+         // Count the amount of city locations based on MAPS.MSG file, starting at string line 1500
+         msg := 1500;
+         while (mstr_map(msg) != "Error") do begin
+            msg++;
+         end
+         town_list := (msg-1);
+      end
+
+      // UseFileSystemOverride is required for art-swap to work
+      if (warning) then begin
+         iniVal := get_ini_setting("ddraw.ini" + "|" + "Misc" + "|" + "UseFileSystemOverride");
+         if (iniVal == 0) then begin
+            display_msg("WARNING: UseFileSystemOverride in ddraw.ini must be enabled!");
+         end
+      end
+   end
+end
+
+procedure Encounter_handler begin
+   variable
+      event := get_sfall_arg,
+      mapID := get_sfall_arg,
+      Maps_List;
+
+   // If the player enters a map on the worldmap, we set it depending on the current terrain type.
+   // event 0 is random encounter, 1 is player initiated "encounter"
+   if (event == 1 AndAlso mapID == MAP_RND_DESERT_1) then begin
+      if (is_terrain_desert) then begin
+         Maps_List := [MAP_RND_DESERT_1];
+         if (global_var(GVAR_CAR_PLACED_TILE) < 0) then set_car_current_town(AREA_RND_DESERT);
+      end
+      else if (is_terrain_mountains) then begin
+         Maps_List := [MAP_RND_MOUNTAIN1, MAP_RND_MOUNTAIN2];
+         if (global_var(GVAR_CAR_PLACED_TILE) < 0) then set_car_current_town(AREA_RND_MOUNTAIN);
+      end
+      else if (is_terrain_city) then begin
+         Maps_List := [MAP_RND_CITY1, MAP_RND_CITY_2, MAP_RND_CITY_3, MAP_RND_CITY_4, MAP_RND_CITY_5, MAP_RND_CITY_6, MAP_RND_CITY_7, MAP_RND_CITY_8];
+         if (global_var(GVAR_CAR_PLACED_TILE) < 0) then set_car_current_town(AREA_RND_CITY);
+      end
+      else if (is_terrain_coast) then begin
+         Maps_List := [MAP_RND_COAST1, MAP_RND_COAST2];
+         if (global_var(GVAR_CAR_PLACED_TILE) < 0) then set_car_current_town(AREA_RND_COAST);
+      end
+      else begin
+         Maps_List := [MAP_RND_DESERT_1];
+         if (global_var(GVAR_CAR_PLACED_TILE) < 0) then set_car_current_town(AREA_RND_DESERT);
+         debug_msg("!!! COULDN'T DETECT TERRAIN TYPE !!!");
+      end
+
+      mapID := array_random_value(Maps_List);
+      set_sfall_return(mapID);
+   end
+   else if (event == 0 and is_terrain_city) then begin
+      // Need to fix that one New Reno tile
+      if (worldmap_xpos >= 950 and worldmap_xpos <=1000) and (worldmap_ypos >= 1000 and worldmap_ypos <= 1050) then begin
+         Maps_List := [MAP_RND_CITY1, MAP_RND_CITY_2, MAP_RND_CITY_3, MAP_RND_CITY_4, MAP_RND_CITY_5, MAP_RND_CITY_6, MAP_RND_CITY_7, MAP_RND_CITY_8];
+         mapID := array_random_value(Maps_List);
+         set_sfall_return(mapID);
+      end
+   end
+end
+
+procedure override_terrain_type begin
+   // Override tile text to city
+   set_terrain_name(19, 20, mstr_worldmap(1002));
+end
+
+procedure mark_locations begin
+   if (get_game_mode bwand WORLDMAP) then begin
+      i := 0;
+      while (i < town_list) do begin
+         if (town_known(i) >= MARK_STATE_KNOWN) then
+            set_town_title(i, mstr_map(1500 + i));
+         else
+            set_town_title(i, mstr_unknown);
+         i++;
+      end
+      set_town_title(AREA_CAR_OUTTA_GAS, mstr_map(1521)); // Car location needs to be named at all times
+   end
+end
+
+procedure swap_interface begin
+   variable file, file_list,
+   pathOld := "art\\INTRFACE\\",
+   pathNew;
+
+   if (iniVal == 2) then begin
+      pathNew := "art\\INTRFACE\\wm_nogrid\\";
+   end
+   else begin
+      pathNew := "art\\INTRFACE\\wm_new\\";
+   end
+
+   file_list := ["wrldmp00","wrldmp01","wrldmp02","wrldmp03","wrldmp04","wrldmp05","wrldmp06",
+                 "wrldmp07","wrldmp08","wrldmp09","wrldmp10","wrldmp11","wrldmp12","wrldmp13",
+                 "wrldmp14","wrldmp15","wrldmp16","wrldmp17","wrldmp18","wrldmp19"];
+
+   foreach (file in file_list) begin
+      file = fs_copy(pathOld + file + ".frm", pathNew + file + ".frm");
+   end
+end
+
+procedure swap_circle begin
+   variable file, file_list,
+   pathOld := "art\\INTRFACE\\",
+   pathNew := "art\\INTRFACE\\circle_new\\";
+
+   file_list := ["WRLDSPR0","WRLDSPR1","WRLDSPR2"];
+
+   foreach (file in file_list) begin
+      file = fs_copy(pathOld + file + ".frm", pathNew + file + ".frm");
+   end
+end
