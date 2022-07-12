@@ -4,7 +4,7 @@ Fallout 2 Alternative Worldmap
 ------------------
 
 The FALLOUT 2 worldmap has various terrain tiles set as "city", which are impossible to recognize for players. With this mod enabled, those tiles have actual visible city ruins on them.
-I have used .Pixotes. modified Fo2 worldmap as base.
+I have used .Pixotes. modified worldmap as base.
 
 Additionally, this mod also allows to enable Fo1-style resting encounters. Stop in the desert -> desert map. Stop over city terrain -> city ruins map, and so on. 
 

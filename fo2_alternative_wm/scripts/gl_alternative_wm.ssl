@@ -1,6 +1,9 @@
 /*
 
-   Check where we are on the worldmap and overwrite the default desert "resting" map.
+   Does a couple things:
+   - Swap the vanilla Fo2 worldmap with new graphics.
+   - Swap the green city circle graphics.
+   - Check where we are on the worldmap and overwrite the default desert "resting" map.
 
    Compatible with vanilla Fo2 and UPU/RPU.
 
@@ -70,13 +73,12 @@ procedure start begin
       set_global_script_type(0);
       register_hook_proc(HOOK_ENCOUNTER, Encounter_handler);
 
-      call override_terrain_type;
-
-      // Overwrite Fo2 interface graphics with files from Fo1.
+      // Overwrite Fo2 worldmap
       iniVal := get_ini_setting(settings_path + "|" + "main" + "|" + "enable_alternative_wm");
       if (iniVal > 0) then begin
          warning := 1;
          call swap_interface;
+         call override_terrain_type;
       end
 
       // Overwrite Fo2 city circle
@@ -86,7 +88,7 @@ procedure start begin
          call swap_circle;
       end
 
-      // Enable classic wm mode
+      // Enable classic city circles
       iniVal := get_ini_setting(settings_path + "|" + "main" + "|" + "enable_classic_mode");
       if (iniVal > 0) then begin
          register_hook_proc(HOOK_GAMEMODECHANGE, mark_locations);
@@ -102,7 +104,7 @@ procedure start begin
          town_list := (msg-1);
       end
 
-      // UseFileSystemOverride is required for art-swap to work
+      // "UseFileSystemOverride" is required for art-swap to work
       if (warning) then begin
          iniVal := get_ini_setting("ddraw.ini" + "|" + "Misc" + "|" + "UseFileSystemOverride");
          if (iniVal == 0) then begin
