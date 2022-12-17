@@ -22,7 +22,7 @@ This mod changes drug effects of healing and food items, to make some less stron
 * +1 healing rate for up to 8 hours
 
 **Iguana-on-a-stick (Whole)**
-* Heal 5 to 10hp
+* Heal 5 to 8hp
 * +2 healing rate for up to 8 hours
 
 **Nuca Cola**
