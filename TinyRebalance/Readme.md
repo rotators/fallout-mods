@@ -7,14 +7,14 @@ This mod changes drug effects of healing and food items, to make some less stron
 
 ## Changes to drug items
 **Stimpak**
-* Heal 5 to 10hp from 10 to 20hp
+* Heal 5 to 10hp (orig.: 10 to 20hp)
 * Heal up to 10hp over the next 2 minutes
 
 **Super Stimpak**
-* Drains -6 to -12hp from -3 to -6hp
+* Drains -6 to -12hp (orig.: -3 to -6hp)
 
 **Fruit**
-* Heal 2 to 8hp from 1 to 4hp
+* Heal 2 to 8hp (orig.: 1 to 4hp)
 * +3 rads from +2
 
 **Iguana-on-a-stick (Bits)**
@@ -26,7 +26,7 @@ This mod changes drug effects of healing and food items, to make some less stron
 * +2 healing rate for up to 8 hours
 
 **Nuca Cola**
-* Heal 1 to 2hp from 1hp
+* Heal 1 to 2hp (orig.: 1hp)
 * +1 Perception for 30 minutes
 
 **Beer**
