@@ -15,7 +15,7 @@ This mod changes drug effects of healing and food items, to make some less stron
 
 **Fruit**
 * Heal 2 to 8hp (orig.: 1 to 4hp)
-* +3 rads from +2
+* +3 rads (orig.: +2)
 
 **Iguana-on-a-stick (Bits)**
 * Heal 4 to 8hp
