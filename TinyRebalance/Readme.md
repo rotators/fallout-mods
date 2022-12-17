@@ -3,7 +3,7 @@
 Tiny Rebalance
 -----------------
 
-This mod changes drug effects of healing and food items, to make some less strong (Stimpaks), and some more valuable (food). Also, on deat of a critter, this mod will randomly destroy half of the loot (can be adjusted in the TinyRebalance.ini file).
+This mod changes drug effects of healing and food items, to make some less strong (Stimpaks), and some more valuable (food). Also, on death of a critter, half of the loot will be randomly destroyed (can be adjusted in the TinyRebalance.ini file).
 
 ## Changes to drug items
 **Stimpak**
