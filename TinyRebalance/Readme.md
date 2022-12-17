@@ -10,9 +10,11 @@ This mod changes drug effects of healing and food items, to make some less stron
 
 Heal 5 to 10hp from 10 to 20hp
 
+Heal up to 10hp over the next 2 minutes
+
 **Super Stimpak**
 
-Drains -6 to -12hp from -3 to -6
+Drains -6 to -12hp from -3 to -6hp
 
 **Fruit**
 
