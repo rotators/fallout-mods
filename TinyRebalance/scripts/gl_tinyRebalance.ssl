@@ -1,0 +1,74 @@
+/*
+
+   Tiny Rebalance mod
+
+   Remove items at random from encounter critters
+
+*/
+
+/* Include Files */
+#include "define.h"
+#include "command.h"
+
+#include "sfall/main.h"
+#include "sfall/lib.inven.h"
+
+/* Standard Script Procedures */
+procedure start;
+procedure destroy_items;
+
+#define settings_path      "mods\\tinyrebalance\\tinyrebalance.ini"
+
+#define DISABLED           0
+#define ALL_CRITTER        1
+#define ONLY_ENC_CRITTER   2
+
+variable i, test, count, item;
+variable iniVal;
+variable inven_List;
+
+procedure start begin
+   if (game_loaded) then begin
+      set_global_script_type(0);
+
+      iniVal := get_ini_setting(settings_path + "|" + "main" + "|" + "enable_loot_reduction");
+      if (iniVal > DISABLED) then begin
+         register_hook_proc(HOOK_STDPROCEDURE, destroy_items);
+      end
+   end
+end
+
+procedure destroy_items begin
+   variable
+      proc := get_sfall_arg,
+      critter := get_sfall_arg;
+
+   if (proc != destroy_proc) then return;
+
+   if (iniVal == ONLY_ENC_CRITTER) and (cur_town >= 0) then return;
+
+   if (obj_type(critter) == OBJ_TYPE_CRITTER) then begin
+      if not(obj_in_party(critter)) then begin
+         inven_List := inven_as_array(critter);
+         count := floor2(len_array(inven_List) / 2);
+
+         if (len_array(inven_List) > 1) then begin
+            test := do_check(dude_obj, STAT_lu, -1);
+            if not(is_success(test)) then begin
+               count := count + 1;
+               //debug("Roll on Luck failed.");
+            end
+         end
+
+         //debug("Found " + len_array(inven_List) + " items. Destroying " + count + " items.");
+         i := 0;
+         while (i < count) do begin
+            // Destroy a random item
+            item := array_random_value(inven_as_array(critter));
+            //debug("PID " + obj_pid(item) + " destroyed.");
+            item := destroy_mult_objs(item, 99999);
+            i++;
+         end
+      end
+   end
+end
