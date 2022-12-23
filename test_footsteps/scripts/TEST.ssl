@@ -1,0 +1,41 @@
+#include "define.h"
+#include "command.h"
+
+procedure start;
+procedure map_enter_p_proc;
+
+procedure start begin
+   //display_msg("pid is: " + self_pid);
+   add_timer_event(self_obj, game_ticks(30), 0);
+end
+
+procedure destroy_p_proc begin
+end
+
+procedure look_at_p_proc begin
+   display_msg("my pid is: " + self_pid);
+   display_msg("my fid is: " + self_fid);
+end
+
+procedure map_enter_p_proc begin
+   //if (days_since_visited > 0) then begin
+      set_global_var(2000, global_var(2000) - 1);
+      destroy_object(self_obj);
+   //end
+   //display_msg("pid is: " + self_pid);
+end
+
+procedure map_exit_p_proc begin
+   //set_global_var(2000, global_var(2000) - 1);
+   //destroy_object(self_obj);
+end
+
+procedure timed_event_p_proc begin
+   //if (global_var(2000) > 10) then begin
+      set_global_var(2000, global_var(2000) - 1);
+      destroy_object(self_obj);
+   /*end
+   else begin
+      add_timer_event(self_obj, game_ticks(3), 0);
+   end*/
+end
