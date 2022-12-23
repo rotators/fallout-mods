@@ -44,31 +44,39 @@ procedure destroy_items begin
       critter := get_sfall_arg;
 
    if (proc != destroy_proc) then return;
-
+   if (obj_type(critter) != OBJ_TYPE_CRITTER) then return;
+   if obj_in_party(critter) then return;
    if (iniVal == ONLY_ENC_CRITTER) and (cur_town >= 0) then return;
 
-   if (obj_type(critter) == OBJ_TYPE_CRITTER) then begin
-      if not(obj_in_party(critter)) then begin
-         inven_List := inven_as_array(critter);
-         count := floor2(len_array(inven_List) / 2);
+   inven_List := inven_as_array(critter);
+   count := floor2(len_array(inven_List) / 2);
 
-         if (len_array(inven_List) > 1) then begin
-            test := do_check(dude_obj, STAT_lu, -1);
-            if not(is_success(test)) then begin
-               count := count + 1;
-               //debug("Roll on Luck failed.");
-            end
-         end
-
-         //debug("Found " + len_array(inven_List) + " items. Destroying " + count + " items.");
-         i := 0;
-         while (i < count) do begin
-            // Destroy a random item
-            item := array_random_value(inven_as_array(critter));
-            //debug("PID " + obj_pid(item) + " destroyed.");
-            item := destroy_mult_objs(item, 99999);
-            i++;
-         end
+   if (len_array(inven_List) > 1) then begin
+      test := do_check(dude_obj, STAT_lu, -2);
+      if not(is_success(test)) then begin
+         count := count + 1;
+         //debug("Roll on Luck failed.");
       end
+   end
+
+   //debug("Found " + len_array(inven_List) + " items. Destroying " + count + " items.");
+   i := 0;
+   while (i < count) do begin
+      // Destroy a random item
+      item := array_random_value(inven_as_array(critter));
+      //debug("PID " + obj_pid(item) + " destroyed.");
+      item := destroy_mult_objs(item, 99999);
+      i++;
+   end
+
+   // Reduce amount of stacked Stimpaks to 1 max
+   count := get_item_count(critter, PID_STIMPAK);
+   if (count > 0) then begin
+      remove_pid_qty(critter, PID_STIMPAK, (count - 1))
+   end
+
+   count := get_item_count(critter, PID_SUPER_STIMPAK);
+   if (count > 0) then begin
+      remove_pid_qty(critter, PID_SUPER_STIMPAK, (count - 1))
    end
 end
