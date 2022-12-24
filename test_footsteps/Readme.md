@@ -5,7 +5,7 @@ Footstep Test
 
 Not an actual mod to play with, just test files for footsteps in soft sand.
 
-Only works on the player, Ian, and children critter.
+Only works on the player, Ian, and children critter. Only compatible with FALLOUT ET TU/Fo1in2.
 
 ### Installation
 To use this mod, open the ddraw.ini, go to [ExtraPatches] and add "PatchFile[number]=mods\test_footsteps" at the end of the "PatchFile"-list!
