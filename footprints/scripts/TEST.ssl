@@ -1,41 +1,41 @@
+/*
+
+   Footprint scenery object
+
+*/
+
 #include "define.h"
 #include "command.h"
 
 procedure start;
+procedure look_at_p_proc;
+procedure description_p_proc;
 procedure map_enter_p_proc;
+procedure timed_event_p_proc;
+
+#define settings_path      "mods\\footprints\\footprints.ini"
+
+variable iniVal;
 
 procedure start begin
-   //display_msg("pid is: " + self_pid);
-   add_timer_event(self_obj, game_ticks(30), 0);
-end
+   // TODO: Improve this shit
+   iniVal := get_ini_setting(settings_path + "|" + "main" + "|" + "alive_time");
 
-procedure destroy_p_proc begin
+   add_timer_event(self_obj, game_ticks(iniVal), 0);
 end
 
 procedure look_at_p_proc begin
-   display_msg("my pid is: " + self_pid);
-   display_msg("my fid is: " + self_fid);
+   script_overrides;
+end
+
+procedure description_p_proc begin
+   script_overrides;
 end
 
 procedure map_enter_p_proc begin
-   //if (days_since_visited > 0) then begin
-      set_global_var(2000, global_var(2000) - 1);
-      destroy_object(self_obj);
-   //end
-   //display_msg("pid is: " + self_pid);
-end
-
-procedure map_exit_p_proc begin
-   //set_global_var(2000, global_var(2000) - 1);
-   //destroy_object(self_obj);
+   destroy_object(self_obj);
 end
 
 procedure timed_event_p_proc begin
-   //if (global_var(2000) > 10) then begin
-      set_global_var(2000, global_var(2000) - 1);
-      destroy_object(self_obj);
-   /*end
-   else begin
-      add_timer_event(self_obj, game_ticks(3), 0);
-   end*/
+   destroy_object(self_obj);
 end
