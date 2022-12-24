@@ -44,7 +44,10 @@ procedure MoveCost_handler begin
    variable
       critter := get_sfall_arg;
 
-   call footsteps(critter);
+   // Only create footprints for 2-leggers for now
+   if (proto_data(obj_pid(critter), cr_body_type) == CR_BODY_BIPED) then begin
+      call footsteps(critter);
+   end
 end
 
 procedure create_prints begin
@@ -64,9 +67,9 @@ procedure footsteps(variable step_crit) begin
 
       //debug("get_tile_fid: " + get_tile_fid(dude_tile));
       if (get_tile_fid(tile_num(step_crit)) >= 191 and get_tile_fid(tile_num(step_crit)) <= 198)
-         or ((get_tile_fid(tile_num(step_crit)) >= 173) and (get_tile_fid(tile_num(step_crit)) <= 175))
+         or (get_tile_fid(tile_num(step_crit)) >= 173 and get_tile_fid(tile_num(step_crit)) <= 175)
          or (get_tile_fid(tile_num(step_crit)) == 203)
-         or ((get_tile_fid(tile_num(step_crit)) >= 205) and (get_tile_fid(tile_num(step_crit)) <= 206))
+         or (get_tile_fid(tile_num(step_crit)) >= 206 and get_tile_fid(tile_num(step_crit)) <= 206)
          or (get_tile_fid(tile_num(step_crit)) == 208)
          or (get_tile_fid(tile_num(step_crit)) == 211)
          or (get_tile_fid(tile_num(step_crit)) == 214)
