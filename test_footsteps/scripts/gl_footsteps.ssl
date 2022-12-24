@@ -1,0 +1,32 @@
+/*
+
+   Footsteps handler
+
+*/
+
+/* Include Files */
+#include "define.h"
+#include "command.h"
+
+#include "sfall/main.h"
+
+/* Standard Script Procedures */
+procedure start;
+procedure MoveCost_handler;
+
+#include "footsteps.h"
+
+procedure start begin
+   if (game_loaded) then begin
+      set_global_script_type(0);
+      register_hook_proc(HOOK_MOVECOST, MoveCost_handler);
+    end
+end
+
+// Creates footsteps while in combat mode
+procedure MoveCost_handler begin
+   variable
+      critter := get_sfall_arg;
+
+   create_footsteps(critter);
+end

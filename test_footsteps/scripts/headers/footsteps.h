@@ -9,16 +9,13 @@
 #define FID_FOOT_1         (33556338)
 #define FID_FOOT_2         (33556339)
 
-#define create_footsteps   call footsteps
+#define create_footsteps(crit)   call footsteps(crit)
 
-variable last_step := 0, new_step := 0, step_fid, tile_List, step_crit;
-procedure footsteps begin
-   step_crit := self_obj;
+variable last_step := 0, new_step := 0, step_fid, step_crit;
+procedure footsteps(variable step_crit) begin
    new_step := tile_num(step_crit);
    if (last_step != new_step) then begin
       last_step := new_step;
-
-      //tile_List := [191];
 
       //debug("get_tile_fid: " + get_tile_fid(dude_tile));
       if (get_tile_fid(tile_num(step_crit)) >= 191 and get_tile_fid(tile_num(step_crit)) <= 198)
