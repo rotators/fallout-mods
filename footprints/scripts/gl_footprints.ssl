@@ -67,11 +67,11 @@ variable critter, i := 0;
    resize_array(step_List, len_array(critter_List));
 
    foreach critter in critter_List begin
-      if not(is_critter_dead(critter)) then begin
+      //if not(is_critter_dead(critter)) then begin
          tile_List[i] := tile_num(critter);
          step_List[i] := 0;
          i++;
-      end
+      //end
    end
 
    save_array("critters", critter_List);
