@@ -9,7 +9,6 @@
 #include "command.h"
 
 #include "sfall/main.h"
-#include "sfall/lib.arrays.h"
 
 /* Standard Script Procedures */
 procedure start;
@@ -27,6 +26,14 @@ procedure footsteps2(variable i, variable step_crit, variable last_step, variabl
 
 #define PID_FOOT_RIGHT     (33554650)
 #define PID_FOOT_LEFT      (33554651)
+
+#define valid_tile         (get_tile_fid(tile_num(step_crit)) >= 191 and get_tile_fid(tile_num(step_crit)) <= 198) \
+                           or (get_tile_fid(tile_num(step_crit)) >= 173 and get_tile_fid(tile_num(step_crit)) <= 175) \
+                           or (get_tile_fid(tile_num(step_crit)) == 203) \
+                           or (get_tile_fid(tile_num(step_crit)) >= 206 and get_tile_fid(tile_num(step_crit)) <= 206) \
+                           or (get_tile_fid(tile_num(step_crit)) == 208) \
+                           or (get_tile_fid(tile_num(step_crit)) == 211) \
+                           or (get_tile_fid(tile_num(step_crit)) == 214)
 
 variable last_step := 0, new_step := 0, step_fid;
 variable critter_List, critter, tile_List, step_List;
@@ -74,7 +81,9 @@ procedure create_prints begin
       variable i := 0;
       load_array("critters");
       foreach (critter in critter_List) begin
-         call footsteps2(i, critter, tile_List[i], step_List[i]);
+         if (proto_data(obj_pid(critter), cr_body_type) == CR_BODY_BIPED) then begin
+            call footsteps2(i, critter, tile_List[i], step_List[i]);
+         end
          i++;
       end
    end
@@ -101,15 +110,7 @@ procedure footsteps(variable step_crit) begin
       last_step := new_step;
 
       //debug("get_tile_fid: " + get_tile_fid(dude_tile));
-      if (get_tile_fid(tile_num(step_crit)) >= 191 and get_tile_fid(tile_num(step_crit)) <= 198)
-         or (get_tile_fid(tile_num(step_crit)) >= 173 and get_tile_fid(tile_num(step_crit)) <= 175)
-         or (get_tile_fid(tile_num(step_crit)) == 203)
-         or (get_tile_fid(tile_num(step_crit)) >= 206 and get_tile_fid(tile_num(step_crit)) <= 206)
-         or (get_tile_fid(tile_num(step_crit)) == 208)
-         or (get_tile_fid(tile_num(step_crit)) == 211)
-         or (get_tile_fid(tile_num(step_crit)) == 214)
-
-      then begin
+      if valid_tile then begin
          if (step_fid == 0) then begin
             step_fid := 1;
             Scenery_Creation := create_object_sid(PID_FOOT_RIGHT, new_step, elevation(step_crit), SCRIPT_TEST);
@@ -132,15 +133,7 @@ procedure footsteps2(variable i, variable step_crit, variable last_step, variabl
       tile_List[i] := new_step;
 
       //debug("get_tile_fid: " + get_tile_fid(dude_tile));
-      if (get_tile_fid(tile_num(step_crit)) >= 191 and get_tile_fid(tile_num(step_crit)) <= 198)
-         or (get_tile_fid(tile_num(step_crit)) >= 173 and get_tile_fid(tile_num(step_crit)) <= 175)
-         or (get_tile_fid(tile_num(step_crit)) == 203)
-         or (get_tile_fid(tile_num(step_crit)) >= 206 and get_tile_fid(tile_num(step_crit)) <= 206)
-         or (get_tile_fid(tile_num(step_crit)) == 208)
-         or (get_tile_fid(tile_num(step_crit)) == 211)
-         or (get_tile_fid(tile_num(step_crit)) == 214)
-
-      then begin
+      if valid_tile then begin
          if (step_fid == 0) then begin
             step_fid := 1;
             Scenery_Creation := create_object_sid(PID_FOOT_RIGHT, new_step, elevation(step_crit), SCRIPT_TEST);
