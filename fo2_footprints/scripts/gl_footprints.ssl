@@ -36,6 +36,13 @@ procedure footsteps2(variable i, variable step_crit, variable last_step, variabl
                            or (get_tile_fid(tile_num(step_crit)) == 211) \
                            or (get_tile_fid(tile_num(step_crit)) == 214)
 
+// ETTU
+//#define SCRIPT_FOOTPRINT   SCRIPT_TEST
+
+// Use test1.ssl for Fo2 compatibility
+#define SCRIPT_FOOTPRINT   3
+
+
 variable last_step := 0, new_step := 0, step_fid;
 variable critter_List, critter, tile_List, step_List;
 
@@ -53,6 +60,18 @@ procedure start begin
 end
 
 procedure map_enter_p_proc begin
+variable scenery_List, scenery;
+
+   // Cleanup footprints
+   // Note: This is in test.ssl for now
+   /*scenery_List := list_as_array(LIST_SCENERY);
+   foreach scenery in scenery_List begin
+      if (obj_pid(scenery) == PID_FOOT_RIGHT or obj_pid(scenery) == PID_FOOT_LEFT) then begin
+         destroy_object(scenery);
+      end
+   end*/
+
+   // Regenerate critter list
    call create_critter_list;
 end
 
@@ -131,11 +150,11 @@ procedure footsteps(variable step_crit) begin
       if valid_tile then begin
          if (step_fid == 0) then begin
             step_fid := 1;
-            Scenery_Creation := create_object_sid(PID_FOOT_RIGHT, new_step, elevation(step_crit), SCRIPT_TEST);
+            Scenery_Creation := create_object_sid(PID_FOOT_RIGHT, new_step, elevation(step_crit), SCRIPT_FOOTPRINT);
          end
          else begin
             step_fid := 0;
-            Scenery_Creation := create_object_sid(PID_FOOT_LEFT, new_step, elevation(step_crit), SCRIPT_TEST);
+            Scenery_Creation := create_object_sid(PID_FOOT_LEFT, new_step, elevation(step_crit), SCRIPT_FOOTPRINT);
          end
          obj_rotate(Scenery_Creation, get_cur_rot(step_crit));
       end
@@ -154,11 +173,11 @@ procedure footsteps2(variable i, variable step_crit, variable last_step, variabl
       if valid_tile then begin
          if (step_fid == 0) then begin
             step_fid := 1;
-            Scenery_Creation := create_object_sid(PID_FOOT_RIGHT, new_step, elevation(step_crit), SCRIPT_TEST);
+            Scenery_Creation := create_object_sid(PID_FOOT_RIGHT, new_step, elevation(step_crit), SCRIPT_FOOTPRINT);
          end
          else begin
             step_fid := 0;
-            Scenery_Creation := create_object_sid(PID_FOOT_LEFT, new_step, elevation(step_crit), SCRIPT_TEST);
+            Scenery_Creation := create_object_sid(PID_FOOT_LEFT, new_step, elevation(step_crit), SCRIPT_FOOTPRINT);
          end
          step_List[i] := step_fid;
          obj_rotate(Scenery_Creation, get_cur_rot(step_crit));

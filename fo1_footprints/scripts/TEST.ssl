@@ -13,7 +13,11 @@ procedure description_p_proc;
 procedure map_enter_p_proc;
 procedure timed_event_p_proc;
 
-#define settings_path      "mods\\footprints\\footprints.ini"
+// ETTU
+#define settings_path      "mods\\fo1_footprints\\footprints.ini"
+
+// Fo2 compatibility
+//#define settings_path      "mods\\fo2_footprints\\footprints.ini"
 
 variable iniVal;
 
@@ -21,7 +25,7 @@ procedure start begin
    // TODO: Improve this shit
    iniVal := get_ini_setting(settings_path + "|" + "main" + "|" + "alive_time");
 
-   add_timer_event(self_obj, game_ticks(iniVal), 0);
+   if (iniVal > 0) then add_timer_event(self_obj, game_ticks(iniVal), 0);
 end
 
 procedure look_at_p_proc begin
