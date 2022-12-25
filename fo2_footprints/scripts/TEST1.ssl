@@ -19,13 +19,15 @@ procedure timed_event_p_proc;
 // Fo2 compatibility
 #define settings_path      "mods\\fo2_footprints\\footprints.ini"
 
-variable iniVal;
+variable alive_time;
+variable alive_rnd;
 
 procedure start begin
    // TODO: Improve this shit
-   iniVal := get_ini_setting(settings_path + "|" + "main" + "|" + "alive_time");
+   alive_time := get_ini_setting(settings_path + "|" + "main" + "|" + "alive_time");
+   alive_rnd := get_ini_setting(settings_path + "|" + "main" + "|" + "alive_rnd");
 
-   if (iniVal > 0) then add_timer_event(self_obj, game_ticks(iniVal), 0);
+   if (alive_time > 0) then add_timer_event(self_obj, game_ticks(alive_time + random(0, alive_rnd)), 0);
 end
 
 procedure look_at_p_proc begin
