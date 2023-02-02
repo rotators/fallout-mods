@@ -26,7 +26,7 @@ This mod changes drug effects of healing and food items, to make some less stron
 * +2 healing rate for up to 8 hours
 
 **Nuca Cola**
-* Heal 1 to 2hp (orig.: 1hp)
+* Heal 1 to 2hp
 * +1 Perception for 30 minutes
 
 **Beer**
