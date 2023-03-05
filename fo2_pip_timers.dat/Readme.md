@@ -11,4 +11,4 @@ In the spirit of Fallout 1's water timer, this mod adds post-it notes to 3 timed
 This mod is compatible with Fo2 vanilla, the unofficial patch, and the restoration project - as long as the latest Sfall release is used. 
 
 ### Installation
-To use this mod, copy the "fo2_alternative_wm.dat" folder into the "/fallout2/mods/" folder and the game will automatically load it.
+To use this mod, copy the "fo2_pip_timers.dat" folder into the "/fallout2/mods/" folder and the game will automatically load it.
