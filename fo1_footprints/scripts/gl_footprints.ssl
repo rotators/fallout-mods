@@ -22,19 +22,30 @@ procedure MoveCost_handler;
 procedure footsteps(variable step_crit);
 procedure footsteps2(variable i, variable step_crit, variable last_step, variable step_fid);
 
+// ETTU
+#define settings_path      "mods\\fo1_footprints\\footprints.ini"
+
+// Fo2 compatibility
+//#define settings_path      "mods\\fo2_footprints\\footprints.ini"
+
 #define FID_FOOT_RIGHT     (33554462)
 #define FID_FOOT_LEFT      (33554463)
 
 #define PID_FOOT_RIGHT     (33554650)
 #define PID_FOOT_LEFT      (33554651)
 
-#define valid_tile         (get_tile_fid(tile_num(step_crit)) >= 191 and get_tile_fid(tile_num(step_crit)) <= 198) \
-                           or (get_tile_fid(tile_num(step_crit)) >= 173 and get_tile_fid(tile_num(step_crit)) <= 175) \
-                           or (get_tile_fid(tile_num(step_crit)) == 203) \
-                           or (get_tile_fid(tile_num(step_crit)) >= 206 and get_tile_fid(tile_num(step_crit)) <= 206) \
-                           or (get_tile_fid(tile_num(step_crit)) == 208) \
-                           or (get_tile_fid(tile_num(step_crit)) == 211) \
-                           or (get_tile_fid(tile_num(step_crit)) == 214)
+#define tile_fid           get_tile_ground_fid(tile_num(step_crit),elevation(step_crit))
+#define valid_tile         (tile_fid >= 191 and tile_fid <= 198) \
+                           or (tile_fid >= 173 and tile_fid <= 175) \
+                           or (tile_fid == 203) \
+                           or (tile_fid >= 206 and tile_fid <= 206) \
+                           or (tile_fid == 208) \
+                           or (tile_fid == 211) \
+                           or (tile_fid == 214)
+
+#define CHECK_PRINTS_ALLOWED \
+   if ((prints_allowed == 0) and (step_crit != dude_obj)) then return; /* Only dude can leave prints */ \
+   if ((prints_allowed == 1) and ((step_crit != dude_obj) and not(obj_in_party(step_crit)))) then return /* Only player party can leave prints */
 
 // ETTU
 #define SCRIPT_FOOTPRINT   SCRIPT_TEST
@@ -45,6 +56,7 @@ procedure footsteps2(variable i, variable step_crit, variable last_step, variabl
 
 variable last_step := 0, new_step := 0, step_fid;
 variable critter_List, critter, tile_List, step_List;
+variable prints_allowed;
 
 procedure start begin
    if (game_loaded) then begin
@@ -53,10 +65,11 @@ procedure start begin
 
       register_hook_proc(HOOK_STDPROCEDURE, StdProcedure_handler);
       register_hook_proc(HOOK_MOVECOST, MoveCost_handler);
+
+      prints_allowed := get_ini_setting(settings_path + "|" + "main" + "|" + "footprints");
    end
 
-   // get_tile_fid only reads data from elevation 0 :(
-   if (dude_elevation == 0) then call create_prints;
+   call create_prints;
 end
 
 procedure map_enter_p_proc begin
@@ -99,8 +112,6 @@ variable critter, i := 0;
 end
 
 procedure create_prints begin
-   if (dude_elevation > 0) then return;
-
    if (critter_List == 0) then call create_critter_list;
 
    if not(combat_is_initialized) then begin
@@ -131,9 +142,6 @@ procedure MoveCost_handler begin
    variable
       critter := get_sfall_arg;
 
-   // get_tile_fid only reads data from elevation 0 :(
-   if (dude_elevation > 0) then return;
-
    // Only create footprints for 2-leggers for now
    if (proto_data(obj_pid(critter), cr_body_type) == CR_BODY_BIPED) and not(is_critter_dead(critter)) and is_visible(critter) then begin
       call footsteps(critter);
@@ -142,6 +150,8 @@ end
 
 // TODO: Rewrite this shit into a single procedure
 procedure footsteps(variable step_crit) begin
+   CHECK_PRINTS_ALLOWED;
+
    new_step := tile_num(step_crit);
    if (last_step != new_step) then begin
       last_step := new_step;
@@ -164,6 +174,8 @@ end
 procedure footsteps2(variable i, variable step_crit, variable last_step, variable step_fid) begin
    load_array("tilenum");
    load_array("stepcount");
+
+   CHECK_PRINTS_ALLOWED;
 
    new_step := tile_num(step_crit);
    if (tile_List[i] != new_step) then begin
