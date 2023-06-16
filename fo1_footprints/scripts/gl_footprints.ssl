@@ -45,7 +45,8 @@ procedure footsteps2(variable i, variable step_crit, variable last_step, variabl
 
 #define CHECK_PRINTS_ALLOWED \
    if ((prints_allowed == 0) and (step_crit != dude_obj)) then return; /* Only dude can leave prints */ \
-   if ((prints_allowed == 1) and ((step_crit != dude_obj) and not(obj_in_party(step_crit)))) then return /* Only player party can leave prints */
+   if ((prints_allowed == 1) and ((step_crit != dude_obj) and not(obj_in_party(step_crit)))) then return; /* Only player party can leave prints */ \
+   if dude_is_sneaking and ((step_crit == dude_obj) or obj_in_party(step_crit)) then return /* Sneaking party will not leave prints */
 
 // ETTU
 #define SCRIPT_FOOTPRINT   SCRIPT_TEST
