@@ -42,6 +42,7 @@ procedure footsteps2(variable i, variable step_crit, variable last_step, variabl
                            or (tile_fid == 208) \
                            or (tile_fid == 211) \
                            or (tile_fid == 214)
+#define valid_critter_ptr  (read_int(critter - 4) == -17958194)
 
 #define CHECK_PRINTS_ALLOWED \
    if ((prints_allowed == 0) and (step_crit != dude_obj)) then return; /* Only dude can leave prints */ \
@@ -113,16 +114,29 @@ variable critter, i := 0;
 end
 
 procedure create_prints begin
+variable regen_critlist;
+
    if (critter_List == 0) then call create_critter_list;
 
    if not(combat_is_initialized) then begin
       variable i := 0;
       //load_array("critters");
       foreach (critter in critter_List) begin
-         if (proto_data(obj_pid(critter), cr_body_type) == CR_BODY_BIPED) and not(is_critter_dead(critter)) and is_visible(critter) then begin
-            call footsteps2(i, critter, tile_List[i], step_List[i]);
+         if valid_critter_ptr then begin
+            if (proto_data(obj_pid(critter), cr_body_type) == CR_BODY_BIPED) and not(is_critter_dead(critter)) and is_visible(critter) then begin
+               call footsteps2(i, critter, tile_List[i], step_List[i]);
+            end
+         end
+         else begin
+            regen_critlist := 1;
+            debug_warning("Critter pointer invalid!");
          end
          i++;
+      end
+
+      if regen_critlist then begin
+         regen_critlist := 0;
+         call create_critter_list;
       end
    end
 end
